@@ -273,6 +273,7 @@ RCT_EXPORT_METHOD(receiptData:(RCTResponseSenderBlock)callback)
     NSString *key = RCTKeyForInstance(request);
     RCTResponseSenderBlock callback = _callbacks[key];
     if(callback) {
+        error = RCTErrorClean(error);
         callback(@[RCTJSErrorFromNSError(error)]);
         [_callbacks removeObjectForKey:key];
     }
@@ -288,6 +289,19 @@ RCT_EXPORT_METHOD(receiptData:(RCTResponseSenderBlock)callback)
 static NSString *RCTKeyForInstance(id instance)
 {
     return [NSString stringWithFormat:@"%p", instance];
+}
+
+static NSError *RCTErrorClean(NSError *error)
+{
+    NSMutableDictionary *userInfo = [[NSMutableDictionary alloc] init];
+    
+    [RCTJSONClean(error.userInfo) enumerateKeysAndObjectsUsingBlock:^(id key, id value, BOOL *stop) {
+        if ([key isKindOfClass:NSString.class] && ![value isKindOfClass:NSNull.class]) {
+            userInfo[key] = value;
+        }
+    }];
+    
+    return [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
 }
 
 @end
